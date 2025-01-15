@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="hero-section text-center">
+    <div class="container">
+        <h1 class="display-4 mb-4">
+            <i class="fas fa-robot me-3"></i>
+            Game Matchup Estimator
+        </h1>
+        <p class="lead mb-4">Predict Clash Royale battle outcomes with our neural network model</p>
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card bg-light text-dark">
+                    <div class="card-body">
+                        <h5 class="card-title">Model Performance</h5>
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <div class="h4 text-primary">74%</div>
+                                <small>Accuracy</small>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="h4 text-success">150K+</div>
+                                <small>Data Points</small>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="h4 text-info">PyTorch</div>
+                                <small>Neural Network</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Prediction Form -->
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-calculator me-2"></i>Matchup Predictor</h4>
+            </div>
+            <div class="card-body">
+                <form id="predictionForm">
+                    <div class="row">
+                        {% for feature in feature_names %}
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ feature }}" class="form-label">
+                                    {{ feature|replace('_', ' ')|title }}
+                                </label>
+                                <input type="number" class="form-control feature-input" 
+                                       id="{{ feature }}" name="{{ feature }}" 
+                                       step="any" required>
+                                <div class="form-text">Enter value for {{ feature|replace('_', ' ') }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-bolt me-2"></i>Predict Outcome
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="fillSampleData()">
+                            <i class="fas fa-vial me-2"></i>Fill Sample Data
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Results -->
+                <div id="predictionResult" class="prediction-result" style="display: none;">
+                    <h4 class="mb-3">Prediction Result</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 id="outcomeText" class="mb-2"></h5>
+                            <p class="mb-1"><strong>Win Probability:</strong> <span id="winProbability"></span></p>
+                            <p class="mb-1"><strong>Confidence:</strong> <span id="confidenceLevel"></span></p>
+                            <p><strong>Certainty:</strong> <span id="certaintyLevel"></span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="progress mb-3" style="height: 30px;">
+                                <div id="winProgress" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 0%">
+                                </div>
+                            </div>
+                            <div id="confidenceBadge" class="text-center"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading Spinner -->
+                <div id="loadingSpinner" class="text-center mt-3" style="display: none;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Analyzing matchup...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Info -->
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5><i class="fas fa-info-circle me-2"></i>About the Model</h5>
+                <p>This neural network model was trained on over 150,000 Clash Royale battles using PyTorch. 
+                   It achieves 74% accuracy in predicting match outcomes using features like trophy counts, 
+                   tower health, and card statistics.</p>
+                <ul>
+                    <li><strong>Architecture:</strong> Multi-layer perceptron with dropout and batch normalization</li>
+                    <li><strong>Features:</strong> {{ feature_names|length }} engineered features from game data</li>
+                    <li><strong>Training:</strong> 100+ epochs with early stopping and learning rate scheduling</li>
+                    <li><strong>Regularization:</strong> L2 regularization and dropout to prevent overfitting</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function fillSampleData() {
+        // Sample data that might represent a balanced matchup
+        const sampleData = {
+            'player_trophies': 5000,
+            'player_crowns': 0,
+            'player_king_tower_hp': 6000,
+            'player_princess_towers_hp': 4000,
+            'opponent_trophies': 4950,
+            'opponent_crowns': 0,
+            'opponent_king_tower_hp': 6000,
+            'opponent_princess_towers_hp': 4000,
+            'player_avg_elixir': 3.9,
+            'opponent_avg_elixir': 4.1,
+            'trophy_diff': 50,
+            'player_total_tower_hp': 10000,
+            'opponent_total_tower_hp': 10000,
+            'tower_hp_diff': 0,
+            'elixir_advantage': -0.2
+        };
+
+        for (const [feature, value] of Object.entries(sampleData)) {
+            document.getElementById(feature).value = value;
+        }
+    }
+
+    document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const features = [];
+        
+        {% for feature in feature_names %}
+        features.push(parseFloat(formData.get('{{ feature }}')));
+        {% endfor %}
+        
+        document.getElementById('loadingSpinner').style.display = 'block';
+        document.getElementById('predictionResult').style.display = 'none';
+        
+        try {
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ features: features })
+            });
+            
+            const result = await response.json();
+            
+            // Hide loading spinner
+            document.getElementById('loadingSpinner').style.display = 'none';
+            
+            if (result.success) {
+                displayPredictionResult(result);
+            } else {
+                alert('Error: ' + result.error);
+            }
+            
+        } catch (error) {
+            document.getElementById('loadingSpinner').style.display = 'none';
+            alert('Prediction failed: ' + error.message);
+        }
+    });
+    
+    function displayPredictionResult(result) {
+        const resultDiv = document.getElementById('predictionResult');
+        const winProbability = result.win_probability;
+        const isWin = result.prediction === 'Win';
+        
+        // Set result styling
+        resultDiv.className = `prediction-result ${isWin ? 'win-prediction' : 'lose-prediction'}`;
+        
+        // Update text content
+        document.getElementById('outcomeText').textContent = 
+            `Prediction: ${result.prediction}`;
+        document.getElementById('winProbability').textContent = 
+            `${(winProbability * 100).toFixed(2)}%`;
+        document.getElementById('confidenceLevel').textContent = 
+            `${(result.confidence * 100).toFixed(2)}%`;
+        document.getElementById('certaintyLevel').textContent = result.certainty;
+        
+        // Update progress bar
+        const winProgress = document.getElementById('winProgress');
+        winProgress.style.width = `${winProbability * 100}%`;
+        winProgress.textContent = `${(winProbability * 100).toFixed(1)}%`;
+        winProgress.className = `progress-bar progress-bar-striped progress-bar-animated ${
+            isWin ? 'bg-success' : 'bg-danger'
+        }`;
+        
+        // Update confidence badge
+        const confidenceBadge = document.getElementById('confidenceBadge');
+        const confidenceClass = `confidence-${result.certainty.toLowerCase()}`;
+        confidenceBadge.innerHTML = `
+            <span class="badge ${confidenceClass} fs-6">
+                ${result.certainty} Confidence
+            </span>
+        `;
+        
+        // Show result
+        resultDiv.style.display = 'block';
+    }
+</script>
+{% endblock %}
+
