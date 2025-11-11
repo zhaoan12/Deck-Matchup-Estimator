@@ -5,8 +5,6 @@ A machine learning project that predicts Clash Royale game outcomes using neural
 ## Project Overview
 Predicting Clash Royale match outcomes with machine learning.
 
-# Improve: Performance tweak
-
 ### Features
 - **Batch Normalization**: Stabilizes training and improves convergence
 - **Dropout Layers**: Prevents overfitting (varying rates per layer)
@@ -40,12 +38,8 @@ Predicting Clash Royale match outcomes with machine learning.
 
 ### Original Features
 - Player and opponent trophy counts
-
-# Enhancement: Better comments
 - Tower health points
 - Crown counts
-
-# Improve: Performance tweak
 - Deck elixir costs
 
 ### Engineered Features
@@ -68,8 +62,6 @@ We experimented with three architectures:
 3. **Residual Model**: Residual connections (overkill for this problem)
 
 The Advanced Model provided the best balance of performance and training efficiency.
-
-# Feature: Improved logging
 
 ## Regularization Techniques
 
